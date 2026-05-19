@@ -61,5 +61,5 @@ while True:
     except Exception as e:
         st.warning(f"Error: {e}")
 
-    time.sleep(15)
+    time.sleep(30)
     st.rerun()
