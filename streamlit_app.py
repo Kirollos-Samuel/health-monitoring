@@ -9,19 +9,10 @@ URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sh
 THINGSPEAK_WRITE_KEY = "G595J63730YTM3SL"
 THINGSPEAK_URL = "https://api.thingspeak.com/update"
 
-# Load your ML model here
-# import pickle
-# model = pickle.load(open("model.pkl", "rb"))
-
-def get_alert_level(bpm, spo2, temp):
-    # Replace this with your real ML model prediction
-    # features = [[bpm, spo2, temp]]
-    # return model.predict(features)[0]
-    
-    # Temporary rule-based logic until model is ready
-    if bpm < 50 or bpm > 120 or spo2 < 90 or temp > 38.5:
+def get_alert_level(bpm, spo2):
+    if bpm < 50 or bpm > 120 or spo2 < 90:
         return 2  # Critical
-    elif bpm < 60 or bpm > 100 or spo2 < 95 or temp > 37.5:
+    elif bpm < 60 or bpm > 100 or spo2 < 95:
         return 1  # Warning
     else:
         return 0  # Normal
@@ -45,9 +36,8 @@ while True:
 
         bpm = float(last['field1'])
         spo2 = float(last['field2'])
-        temp = float(last.get('timestamp', 36.5))  # update when temp field added
 
-        alert = get_alert_level(bpm, spo2, temp)
+        alert = get_alert_level(bpm, spo2)
         result = send_to_thingspeak(alert)
 
         alert_labels = {
@@ -64,7 +54,7 @@ while True:
             with col2:
                 st.metric("🩸 SpO₂", f"{spo2} %")
 
-            st.markdown(f"### Alert Level: :{color}[{label}]")
+            st.markdown(f"### Alert: :{color}[{label}]")
             st.write("ThingSpeak field3 updated:", result)
             st.write("Last update:", last['timestamp'])
 
