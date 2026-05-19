@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 
-SHEET_ID = "your_google_sheet_id_here"
+SHEET_ID = "1DZVDm1ilkUGeQEJg5snnIk6cooVlOv6Nj9_FppdhEt8"
 URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
 st.title("🏥 Health Monitoring Dashboard")
