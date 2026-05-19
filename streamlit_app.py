@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 import time
 
-SHEET_ID = "1DZVDm1ilkUGeQEJg5snnIk6cooVlOv6Nj9_FppdhEt8"
+SHEET_ID = "your_google_sheet_id"
 URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
 THINGSPEAK_WRITE_KEY = "G595J63730YTM3SL"
@@ -28,6 +28,7 @@ def send_to_thingspeak(alert_level):
 st.title("🏥 Health Monitoring Dashboard")
 
 placeholder = st.empty()
+last_alert = None
 
 while True:
     try:
@@ -38,8 +39,12 @@ while True:
         spo2 = float(last['field2'])
 
         alert = get_alert_level(bpm, spo2)
-        result = send_to_thingspeak(alert)
 
+        # Only write to ThingSpeak when alert level changes
+        if alert != last_alert:
+            result = send_to_thingspeak(alert)
+            last_alert = alert
+        
         alert_labels = {
             0: ("✅ Normal", "green"),
             1: ("⚠️ Warning", "orange"),
@@ -55,11 +60,10 @@ while True:
                 st.metric("🩸 SpO₂", f"{spo2} %")
 
             st.markdown(f"### Alert: :{color}[{label}]")
-            st.write("ThingSpeak field3 updated:", result)
             st.write("Last update:", last['timestamp'])
 
     except Exception as e:
         st.warning(f"Error: {e}")
 
-    time.sleep(30)
+    time.sleep(60)
     st.rerun()
