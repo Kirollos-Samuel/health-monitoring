@@ -5,8 +5,9 @@ import pickle
 import numpy as np
 import time
 
-# Load ML model
-model = pickle.load(open("patient_risk_random_forest.pkl", "rb"))
+# Load ML modelimport joblib
+import joblib
+model = joblib.load("patient_risk_random_forest.pkl")
 
 SHEET_ID = "1DZVDm1ilkUGeQEJg5snnIk6cooVlOv6Nj9_FppdhEt8"
 URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet1"
