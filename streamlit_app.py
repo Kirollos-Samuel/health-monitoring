@@ -1,21 +1,26 @@
 import streamlit as st
 import pandas as pd
 import requests
+import pickle
+import numpy as np
 import time
 
-SHEET_ID = "your_google_sheet_id"
+# Load ML model
+model = pickle.load(open("model.pkl", "rb"))
+
+SHEET_ID = "1DZVDm1ilkUGeQEJg5snnIk6cooVlOv6Nj9_FppdhEt8"
 URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet1"
 
 THINGSPEAK_WRITE_KEY = "G595J63730YTM3SL"
 THINGSPEAK_URL = "https://api.thingspeak.com/update"
 
-def get_alert_level(bpm, spo2):
-    if bpm < 50 or bpm > 120 or spo2 < 90:
-        return 2  # Critical
-    elif bpm < 60 or bpm > 100 or spo2 < 95:
-        return 1  # Warning
-    else:
-        return 0  # Normal
+def get_alert_level(label):
+    mapping = {
+        "Normal": 0,
+        "Dangerous": 1,
+        "Critical": 2
+    }
+    return mapping.get(label, 0)
 
 def send_to_thingspeak(alert_level):
     params = {
@@ -35,31 +40,38 @@ while True:
         df = pd.read_csv(URL)
         last = df.iloc[-1]
 
+        # Input order: BPM, Temperature, SpO₂
         bpm = float(last['field1'])
         spo2 = float(last['field2'])
+        temp = 36.8  # placeholder until temp field is added
 
-        alert = get_alert_level(bpm, spo2)
+        # Predict
+        features = np.array([[bpm, temp, spo2]])
+        prediction = model.predict(features)[0]
+        alert = get_alert_level(prediction)
 
-        # Only write to ThingSpeak when alert level changes
+        # Only write to ThingSpeak when alert changes
         if alert != last_alert:
-            result = send_to_thingspeak(alert)
+            send_to_thingspeak(alert)
             last_alert = alert
-        
-        alert_labels = {
-            0: ("✅ Normal", "green"),
-            1: ("⚠️ Warning", "orange"),
-            2: ("🚨 Critical", "red")
+
+        alert_styles = {
+            "Normal":    ("✅ Normal",    "green"),
+            "Dangerous": ("⚠️ Dangerous", "orange"),
+            "Critical":  ("🚨 Critical",  "red")
         }
-        label, color = alert_labels[alert]
+        label, color = alert_styles[prediction]
 
         with placeholder.container():
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("❤️ BPM", f"{bpm}")
             with col2:
                 st.metric("🩸 SpO₂", f"{spo2} %")
+            with col3:
+                st.metric("🌡️ Temp", f"{temp} °C")
 
-            st.markdown(f"### Alert: :{color}[{label}]")
+            st.markdown(f"### Prediction: :{color}[{label}]")
             st.write("Last update:", last['timestamp'])
 
     except Exception as e:
